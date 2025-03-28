@@ -26,15 +26,16 @@ amadeus = Client(
 )
 
 st.title("Flight Price Finder")
-origin = st.text_input("Enter origin airport code (e.g., JFK)").upper()
-destination = st.text_input("Enter destination airport code (e.g., LHR)").upper()
+source = st.text_input("Enter Source Airport Code (e.g., JFK)").upper()
+destination = st.text_input("Enter Destination Airport Code (e.g., LHR)").upper()
+airline = st.text_input("Enter Airline Code (optional, e.g., AI, EK, QR)").upper()
 date = st.date_input("Select departure date").strftime("%Y-%m-%d")
 
 if st.button("Search Flights"):
-    def get_flight_prices(origin, destination, date):
+    def get_flight_prices(source, destination, airline, date):
         try:
             response = amadeus.shopping.flight_offers_search.get(
-                originLocationCode=origin,
+                originLocationCode=source,
                 destinationLocationCode=destination,
                 departureDate=date,
                 adults=1,
@@ -53,12 +54,14 @@ if st.button("Search Flights"):
             for itinerary in flight.get("itineraries", []):
                 flights.append({
                     "Price (USD)": flight["price"]["total"],
-                    "Airline": flight["validatingAirlineCodes"][0],
+                    "Source": source,
+                    "Destination": destination,
+                    "Airline": airline,
                     "Departure": itinerary["segments"][0]["departure"]["at"]
                 })
         return flights
 
-    flight_data = get_flight_prices(origin, destination, date)
+    flight_data = get_flight_prices(source, destination, airline, date)
     parsed_flights = parse_flight_data(flight_data)
 
     if parsed_flights:
@@ -69,54 +72,46 @@ if st.button("Search Flights"):
     else:
         st.warning("No flight data found.")
 
-# -------------------- Step 2: Load & Process Dataset --------------------
-
 df = pd.read_csv("airfare_dataset.csv")
-
-# Convert datetime columns
 df["Departure"] = pd.to_datetime(df["Departure"])
-
-# Extract relevant date-based features
 df["Departure_Year"] = df["Departure"].dt.year
 df["Departure_Month"] = df["Departure"].dt.month
 df["Departure_Day"] = df["Departure"].dt.day
-
-# Drop unused columns
 df.drop(columns=["Departure"], inplace=True)
 
-# Define Features and Target Variable
-X = df[["Airline", "Departure_Year", "Departure_Month", "Departure_Day"]]  # Features
-y = df["Price (USD)"]  # Target variable
+X = df[["Source", "Destination", "Airline", "Departure_Year", "Departure_Month", "Departure_Day"]]
+y = df["Price (USD)"]
 
-# -------------------- Step 3: Preprocessing --------------------
+model = joblib.load("airfare_model.joblib")
+
+if st.button("Predict Fare"):
+    input_data = pd.DataFrame([[source, destination, airline, date]],
+                              columns=["Source", "Destination", "Airline", "Departure_Year", "Departure_Month", "Departure_Day"])
+    try:
+        prediction = model.predict(input_data)
+        st.success(f"Predicted Airfare: ${prediction[0]:.2f}")
+    except Exception as e:
+        st.error(f"Error: {e}")
 
 categorical_features = ["Airline"]
 numeric_features = ["Departure_Year", "Departure_Month", "Departure_Day"]
 
 preprocessor = ColumnTransformer(
     transformers=[
-        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features),  # Ignore unknown airlines
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features),
         ('num', StandardScaler(), numeric_features)
     ]
 )
 
-# Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# -------------------- Step 4: Train Machine Learning Models --------------------
-
-# Define model pipeline
 model_pipeline = Pipeline([
     ('preprocessor', preprocessor),
     ('regressor', xgb.XGBRegressor(objective="reg:squarederror", n_estimators=100, random_state=42))
 ])
 
-# Train model
 model_pipeline.fit(X_train, y_train)
 
-# -------------------- Step 5: Save the Trained Model --------------------
-
-# Save the trained model and preprocessor
 joblib.dump(model_pipeline, "airfare_model.joblib")
 print("Model saved successfully!")
 
