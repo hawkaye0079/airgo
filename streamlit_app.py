@@ -11,8 +11,8 @@ import joblib
 from amadeus import Client, ResponseError
 
 amadeus = Client(
-    client_id="4TObrLiMnKERKFZACkNLFTwaPqPxVHkA",
-    client_secret="ZqxP2IKd1n2v6ugT"
+    client_id="IPRAD3XtfhGIM4x63XbCddrFkLVzIXDD",
+    client_secret="xDSSjZ1cxv36cWpG"
 )
 
 st.title("Flight Price Finder")
