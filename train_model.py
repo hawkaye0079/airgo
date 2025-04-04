@@ -56,12 +56,10 @@ joblib.dump(preprocessor, "preprocessor.joblib")
 
 print("Model and preprocessor saved successfully!")
 
-# Predict on the test set
 y_pred = model.predict(X_test)
 
-# Calculate evaluation metrics
 mse = mean_squared_error(y_test, y_pred)
-rmse = np.sqrt(mse)  # Root Mean Squared Error
+rmse = np.sqrt(mse) 
 r2 = r2_score(y_test, y_pred)
 
 print(f"Mean Squared Error (MSE): {mse:.2f}")
