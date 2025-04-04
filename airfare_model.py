@@ -18,8 +18,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_squared_error, r2_score
 import joblib
 
-# -------------------- Step 1: Fetch Flight Data from Amadeus API --------------------
-
 amadeus = Client(
     client_id="4TObrLiMnKERKFZACkNLFTwaPqPxVHkA",
     client_secret="ZqxP2IKd1n2v6ugT"
