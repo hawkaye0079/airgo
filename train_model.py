@@ -13,6 +13,8 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np
 
 data = pd.read_csv("airfare_dataset.csv")
 
@@ -53,3 +55,15 @@ joblib.dump(model, "airfare_model.joblib")
 joblib.dump(preprocessor, "preprocessor.joblib")
 
 print("Model and preprocessor saved successfully!")
+
+# Predict on the test set
+y_pred = model.predict(X_test)
+
+# Calculate evaluation metrics
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)  # Root Mean Squared Error
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Squared Error (MSE): {mse:.2f}")
+print(f"Root Mean Squared Error (RMSE): {rmse:.2f}")
+print(f"R² Score: {r2:.4f}")
